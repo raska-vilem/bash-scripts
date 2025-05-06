@@ -1,27 +1,24 @@
 #!/bin/bash
 
-# Function to display messages with color
 function echo_info() {
-  echo "\033[0;34m[INFO] $1\033[0m"
+  echo "$(tput setaf 4)[INFO] $1$(tput sgr0)"
 }
 
 function echo_success() {
-  echo "\033[0;32m[SUCCESS] $1\033[0m"
+  echo "$(tput setaf 2)[SUCCESS] $1$(tput sgr0)"
 }
 
 function echo_error() {
-  echo "\033[0;31m[ERROR] $1\033[0m"
+  echo "$(tput setaf 1)[ERROR] $1$(tput sgr0)"
 }
 
-# Get current branch
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 echo_info "Current branch: $current_branch"
 
-# Determine main branch (master or main)
-if git show-ref --verify --quiet refs/heads/main; then
-  main_branch="main"
-elif git show-ref --verify --quiet refs/heads/master; then
+if git show-ref --verify --quiet refs/heads/master; then
   main_branch="master"
+elif git show-ref --verify --quiet refs/heads/main; then
+  main_branch="main"
 else
   echo_error "Neither 'main' nor 'master' branch found"
   exit 1
@@ -29,18 +26,15 @@ fi
 
 echo_info "Main branch detected as: $main_branch"
 
-# Check if we're already on the main branch
 if [[ "$current_branch" == "$main_branch" ]]; then
   echo_error "Already on $main_branch branch. No need to rebase."
   exit 0
 fi
 
-# Check for uncommitted changes
 if ! git diff-index --quiet HEAD --; then
-  # Stash changes
   echo_info "Stashing changes..."
   stash_result=$(git stash push -m "Auto-stashed for rebase workflow")
-  
+
   if [[ "$stash_result" == "No local changes to save" ]]; then
     has_stashed=false
     echo_info "No changes to stash"
@@ -53,20 +47,16 @@ else
   echo_info "No local changes detected"
 fi
 
-# Checkout main branch
 echo_info "Checking out $main_branch branch..."
 if ! git checkout "$main_branch"; then
   echo_error "Failed to checkout $main_branch"
   exit 1
 fi
 
-# Pull latest changes
 echo_info "Pulling latest changes from $main_branch..."
 if ! git pull origin "$main_branch"; then
   echo_error "Failed to pull from $main_branch"
-  # Return to original branch
   git checkout "$current_branch"
-  # Apply stash if we stashed changes
   if [[ "$has_stashed" == true ]]; then
     echo_info "Applying stashed changes..."
     git stash pop
@@ -74,21 +64,18 @@ if ! git pull origin "$main_branch"; then
   exit 1
 fi
 
-# Return to the original branch
 echo_info "Checking out original branch: $current_branch..."
 if ! git checkout "$current_branch"; then
   echo_error "Failed to checkout $current_branch"
   exit 1
 fi
 
-# Rebase onto main branch
 echo_info "Rebasing $current_branch onto $main_branch..."
 if ! git rebase "$main_branch"; then
   echo_error "Rebase conflict detected. Resolve conflicts and continue the rebase manually."
   echo_info "After resolving conflicts, run: git rebase --continue"
   echo_info "Then run: git push --force-with-lease origin $current_branch"
-  
-  # Apply stash if we stashed changes (after resolving rebase)
+
   if [[ "$has_stashed" == true ]]; then
     echo_info "Don't forget to apply your stashed changes after completing the rebase:"
     echo_info "git stash pop"
@@ -96,11 +83,9 @@ if ! git rebase "$main_branch"; then
   exit 1
 fi
 
-# Force push if rebase successful
 echo_info "Force pushing changes to remote..."
 if ! git push --force-with-lease origin "$current_branch"; then
   echo_error "Failed to push changes to remote"
-  # Apply stash if we stashed changes
   if [[ "$has_stashed" == true ]]; then
     echo_info "Applying stashed changes..."
     git stash pop
@@ -108,7 +93,6 @@ if ! git push --force-with-lease origin "$current_branch"; then
   exit 1
 fi
 
-# Apply stashed changes if any
 if [[ "$has_stashed" == true ]]; then
   echo_info "Applying stashed changes..."
   if ! git stash pop; then
@@ -119,4 +103,3 @@ if [[ "$has_stashed" == true ]]; then
 fi
 
 echo_success "Complete! Your branch $current_branch is now rebased on $main_branch and pushed to remote."
-
