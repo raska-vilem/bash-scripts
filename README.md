@@ -61,6 +61,27 @@ Features:
 - Opens editor for commit message
 - Pushes changes to the remote repository
 
+### `remline` (Remove Line)
+
+Remove lines matching a pattern from a file using sed.
+
+```bash
+remline "pattern" filename.txt
+```
+
+Features:
+- Removes all lines containing the specified pattern
+- Uses sed for efficient in-place editing
+- Validates file existence before processing
+- Supports regex patterns for flexible matching
+
+Examples:
+```bash
+remline "TODO" myfile.txt      # Remove lines containing "TODO"
+remline "^#" config.conf       # Remove lines starting with "#"
+remline "error" logfile.log    # Remove lines containing "error"
+```
+
 ## Automatic Updates
 
 The scripts will automatically update when you open a new terminal session, ensuring you always have the latest versions.

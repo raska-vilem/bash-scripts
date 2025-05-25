@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# remline - Remove lines matching patterns from files using sed
+# Usage: remline <pattern> <file>
+
+if [ $# -ne 2 ]; then
+    echo "Usage: remline <pattern> <file>"
+    echo "Remove lines matching pattern from file using sed"
+    exit 1
+fi
+
+pattern="$1"
+file="$2"
+
+if [ ! -f "$file" ]; then
+    echo "Error: File '$file' does not exist"
+    exit 1
+fi
+
+# Remove lines matching the pattern using sed
+sed -i "/${pattern}/d" "$file"
+
+echo "Lines matching pattern '$pattern' removed from '$file'"
