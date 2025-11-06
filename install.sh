@@ -7,6 +7,8 @@ NC=$(tput sgr0)
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$REPO_DIR/scripts"
+ALIASES_DIR="$REPO_DIR/aliases"
+INIT_SCRIPT="rc.sh"
 
 if ! command -v git &> /dev/null; then
     echo -e "${RED}Error: Git is not installed. Please install Git and try again.${NC}"
@@ -19,22 +21,17 @@ configure_shell_profile() {
 
     touch "$shell_profile"
 
-    if ! grep -q "# START VILEM SCRIPTS" "$shell_profile"; then
-        echo "" >> "$shell_profile"
-        echo "# START VILEM SCRIPTS" >> "$shell_profile"
-        echo "if [ -d \"$SCRIPTS_DIR\" ]; then" >> "$shell_profile"
-        echo "    if [[ \":\$PATH:\" != *\":$SCRIPTS_DIR:\"* ]]; then" >> "$shell_profile"
-        echo "        export PATH=\"\$PATH:$SCRIPTS_DIR\"" >> "$shell_profile"
-        echo "    fi" >> "$shell_profile"
-        echo "    (cd \"$REPO_DIR\" && git pull -q >/dev/null 2>&1 &)" >> "$shell_profile"
-        echo "fi" >> "$shell_profile"
-        echo "# END VILEM SCRIPTS" >> "$shell_profile"
-        echo -e "${GREEN}Successfully configured $shell_name profile at $shell_profile${NC}"
+    SCRIPT_LOADER="source $REPO_DIR/rc.sh $REPO_DIR"
+
+    if ! grep -q "$SCRIPT_LOADER" "$shell_profile"; then
+        echo "$SCRIPT_LOADER" >> "$shell_profile"
+
+        echo -e "${GREEN}Installation complete!${NC}"
+        echo -e "${YELLOW}Please restart your terminal to apply changes.${NC}"
     else
-        echo -e "${YELLOW}Scripts path already configured in $shell_name profile${NC}"
+        echo -e "${YELLOW}Script loader already configured in $shell_name profile${NC}"
     fi
 }
-
 
 chmod +x "$SCRIPTS_DIR"/*
 
@@ -52,9 +49,3 @@ else
     echo -e "${YELLOW}Please manually add $SCRIPTS_DIR to your PATH${NC}"
     exit 1
 fi
-
-echo -e "${GREEN}Installation complete!${NC}"
-echo -e "${YELLOW}Please restart your terminal or run 'source ~/.bashrc' or 'source ~/.zshrc' to apply changes.${NC}"
-
-export PATH="$PATH:$SCRIPTS_DIR"
-echo -e "${GREEN}Scripts are available in the current session.${NC}"
